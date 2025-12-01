@@ -1,0 +1,177 @@
+<app-header-empresa></app-header-empresa>
+
+<main class="tarifas-wrap">
+  <div class="container">
+    <div class="toolbar">
+      <h1 class="page-title">Planes</h1>
+      <div class="toolbar-actions">
+        <button class="btn btn-outline" (click)="resetFiltros()">
+          Limpiar filtros
+        </button>
+      </div>
+    </div>
+
+    <!-- Plan actual destacado -->
+    <section class="current-plan" *ngIf="planActual()">
+      <div class="current-plan-card">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div>
+            <h2 class="h5 mb-2">Tu plan actual</h2>
+            <h3 class="h4 mb-1">{{ planActual()?.nombre }}</h3>
+            <p class="text-muted mb-0">{{ planActual()?.descripcion }}</p>
+            <div class="mt-2">
+              <span class="badge bg-primary me-2">Sedes: {{ planActual()?.maxSedes }}</span>
+              <span class="badge bg-info">Lockers por sede: {{ planActual()?.maxLockersPorSede }}</span>
+            </div>
+          </div>
+          <div class="text-end">
+            <span class="badge bg-success fs-6 px-3 py-2">Plan activo</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- filtros -->
+    <section class="filters">
+      <input class="input" type="text" placeholder="Buscar por nombre o código…" [value]="busqueda()"
+        (input)="onBuscar($event)" />
+
+      <select class="input" [value]="estadoFiltro()" (change)="onChangeEstado($event)">
+        <option value="Todos">Todos</option>
+        <option value="Activo">Activos</option>
+        <option value="Inactivo">Inactivos</option>
+      </select>
+    </section>
+
+    <!-- cards -->
+    <section class="plans-grid">
+      <ng-container *ngFor="let p of planesFiltrados(); trackBy: trackById">
+        <article class="plan-card" [class.inactive]="p.estado === 'Inactivo'" [class.current-plan-card]="esPlanActual(p)">
+          <header class="plan-header">
+            <div class="plan-title">
+              <h2>{{ p.nombre }}</h2>
+              <small>{{ p.descripcion }}</small>
+            </div>
+            <span class="badge" [class.badge-success]="p.estado === 'Activo'"
+              [class.badge-danger]="p.estado === 'Inactivo'">
+              {{ p.estado }}
+            </span>
+          </header>
+
+          <div class="plan-meta">
+            <div>
+              <strong>Sedes:</strong>
+              <span>{{ p.maxSedes }}</span>
+            </div>
+            <div>
+              <strong>Lockers por sede:</strong>
+              <span>{{ p.maxLockersPorSede }}</span>
+            </div>
+          </div>
+
+          <div class="plan-body">
+            <h3>Incluye</h3>
+            <ul class="list">
+              <li *ngFor="let i of p.incluye">
+                <span class="dot success"></span>
+                {{ i }}
+              </li>
+            </ul>
+
+            <h3 *ngIf="p.noIncluye.length">No incluye</h3>
+            <ul class="list muted" *ngIf="p.noIncluye.length">
+              <li *ngFor="let x of p.noIncluye">
+                <span class="dot danger"></span>
+                {{ x }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Acciones -->
+          <footer class="plan-actions">
+            <div *ngIf="esPlanActual(p)" class="mb-2">
+              <span class="badge badge-success">Tu plan actual</span>
+            </div>
+            <button 
+              class="btn" 
+              [class.btn-success]="!esPlanActual(p)" 
+              [class.btn-outline-secondary]="esPlanActual(p)"
+              (click)="cambiarTarifa(p)" 
+              [disabled]="p.estado !== 'Activo' || loading()">
+              <span *ngIf="loading()" class="spinner-border spinner-border-sm me-2"></span>
+              {{ esPlanActual(p) ? 'Plan actual' : 'Seleccionar este plan' }}
+            </button>
+          </footer>
+        </article>
+      </ng-container>
+
+      <p class="empty" *ngIf="planesFiltrados().length === 0">
+        No hay planes con esos filtros.
+      </p>
+    </section>
+  </div>
+</main>
+
+<!-- Modal de Confirmación -->
+<div class="modal-overlay" *ngIf="showConfirmModal()" (click)="cerrarModales()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ modalTitle() }}</h3>
+      <button type="button" class="btn-close" (click)="cerrarModales()" aria-label="Cerrar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>{{ modalMessage() }}</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" (click)="cerrarModales()">Cancelar</button>
+      <button type="button" class="btn btn-success" (click)="confirmarCambioTarifa()" [disabled]="loading()">
+        <span *ngIf="loading()" class="spinner-border spinner-border-sm me-2"></span>
+        Confirmar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Alerta -->
+<div class="modal-overlay" *ngIf="showAlertModal()" (click)="cerrarModales()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ modalTitle() }}</h3>
+      <button type="button" class="btn-close" (click)="cerrarModales()" aria-label="Cerrar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+        <p class="mb-0">{{ modalMessage() }}</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-success" (click)="cerrarModales()">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Éxito -->
+<div class="modal-overlay" *ngIf="showSuccessModal()" (click)="cerrarModales()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ modalTitle() }}</h3>
+      <button type="button" class="btn-close" (click)="cerrarModales()" aria-label="Cerrar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+        <p class="mb-0">{{ modalMessage() }}</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-success" (click)="cerrarModales()">Aceptar</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,327 @@
+:root {
+    --brand: #16a34a;
+    --brand-600: #15803d;
+    --brand-50: #dcfce7;
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --border: rgba(0, 0, 0, .08);
+}
+
+.header-empresa {
+    background: var(--brand);
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+}
+
+.header-empresa .btn-outline-light {
+    color: #fff;
+    border-color: #fff;
+}
+
+.header-empresa .btn-outline-light:hover {
+    background: #fff;
+    color: var(--brand-600);
+}
+
+.panel-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem 3rem;
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+
+@media (max-width: 992px) {
+    .kpi-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.kpi-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
+    padding: 1.25rem 1.25rem 1rem;
+    position: relative;
+    min-height: 148px;
+}
+
+.kpi-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 6px;
+    border-radius: 1rem 1rem 0 0;
+    background: linear-gradient(90deg, var(--brand), var(--brand-600));
+}
+
+.kpi-title {
+    color: var(--muted);
+    margin: .25rem 0 .5rem;
+}
+
+.kpi-value {
+    font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+    font-weight: 800;
+    color: var(--ink);
+}
+
+.kpi-hint {
+    color: var(--muted);
+}
+
+.section-title {
+    margin: 2rem 0 1rem;
+    font-weight: 800;
+    color: var(--ink);
+}
+
+.table-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
+    overflow: hidden;
+}
+
+.table-card table {
+    margin: 0;
+}
+
+.table-card thead th {
+    background: #f9fafb;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.table-card tbody tr {
+    border-bottom: 1px solid var(--border);
+}
+
+.table-card tbody tr:hover {
+    background: #fafafa;
+}
+
+.badge-status {
+    display: inline-block;
+    padding: .45rem .9rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: .95rem;
+}
+
+.badge-pendiente {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.badge-camino {
+    background: #fde68a;
+    color: #92400e;
+}
+
+.badge-entregado {
+    background: #bbf7d0;
+    color: #065f46;
+    /* verde suave/medio */
+}
+
+.badge-logistica {
+    display: inline-block;
+    padding: .35rem .75rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: .9rem;
+}
+
+.badge-logistica-pendiente {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.badge-logistica-asignado {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.badge-logistica-en-camino {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-logistica-completado {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.btn-outline-success {
+    color: var(--brand-600);
+    border-color: var(--brand-600);
+}
+
+.btn-outline-success:hover {
+    background: var(--brand-600);
+    color: #fff;
+}
+
+footer {
+    margin-top: 2.5rem;
+}
+
+.card-filter {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.pagination-controls .btn {
+    min-width: 9rem;
+}
+
+.page-indicator {
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.empresa-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        thead {
+            display: none;
+        }
+
+        tbody {
+            display: block;
+        }
+
+        tr {
+            display: block;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: .75rem;
+            margin-bottom: .75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+            overflow: hidden;
+        }
+
+        td {
+            display: block;
+            width: 100%;
+            padding: .55rem .9rem;
+            border-bottom: 1px solid #f3f4f6;
+            white-space: normal; // permitir salto de línea en mobile
+            text-align: left;
+        }
+
+        td:last-child {
+            border-bottom: none;
+            text-align: right;
+        }
+
+        td::before {
+            content: attr(data-label);
+            display: block;
+            font-size: .75rem;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: .15rem;
+        }
+    }
+}
+
+/* Aseguramos que el contenedor no haga scroll horizontal en mobile */
+.table-responsive {
+    @media (max-width: 768px) {
+        overflow-x: visible;
+    }
+}
+
+// Estilos para modales
+.repartidor-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1040;
+}
+
+.repartidor-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1050;
+  pointer-events: auto;
+}
+
+.confirm-alert-backdrop {
+  z-index: 1060 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.confirm-alert-modal {
+  z-index: 1070 !important;
+  pointer-events: auto !important;
+}
+
+.repartidor-modal__dialog {
+  width: min(640px, 100%);
+  background: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  padding: 1.5rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.repartidor-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.repartidor-modal__body {
+  margin-bottom: 1rem;
+}
+
+.repartidor-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}

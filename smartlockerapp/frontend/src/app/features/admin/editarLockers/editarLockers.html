@@ -1,0 +1,112 @@
+<app-header-admin></app-header-admin>
+
+<main class="edit-wrap">
+    <div class="container">
+        <div class="toolbar">
+            <h1 class="page-title">Editar {{ nombreLocker }}</h1>
+            <div class="toolbar-actions">
+                <button class="btn btn-outline" (click)="cancelar()" [disabled]="loading">Cancelar</button>
+                <button class="btn btn-success" (click)="guardar()" [disabled]="loading || loadingUbicaciones">
+                    <span *ngIf="loading">Guardando...</span>
+                    <span *ngIf="!loading">Guardar</span>
+                </button>
+            </div>
+        </div>
+
+        <div *ngIf="loading" class="text-center py-5">
+            <p>Cargando información del locker...</p>
+        </div>
+
+        <form [formGroup]="form" class="edit-grid" *ngIf="!loading && locker">
+            <section class="card">
+                <h2 class="card-title">Datos generales</h2>
+
+                <div class="form-row">
+                    <label>ID</label>
+                    <input class="input" [value]="locker.id" disabled>
+                </div>
+
+                <div class="form-row">
+                    <label>Número*</label>
+                    <input class="input" type="number" formControlName="numero" min="1" placeholder="Número del locker">
+                    <small class="error" *ngIf="form.get('numero')?.touched && form.get('numero')?.invalid">
+                        El número es requerido y debe ser mayor a 0.
+                    </small>
+                </div>
+
+                <div class="form-row">
+                    <label>Sede (Ubicación)*</label>
+                    <select class="input" formControlName="ubicacion_id" [disabled]="loadingUbicaciones">
+                        <option value="" disabled>Selecciona una ubicación…</option>
+                        <option *ngIf="loadingUbicaciones" disabled>Cargando ubicaciones...</option>
+                        <option *ngFor="let u of ubicaciones" [value]="u.id">{{ u.nombre }}</option>
+                    </select>
+                    <small class="error" *ngIf="form.get('ubicacion_id')?.touched && form.get('ubicacion_id')?.invalid">
+                        Selecciona una ubicación.
+                    </small>
+                </div>
+
+                <div class="form-row">
+                    <label>Estado*</label>
+                    <select class="input" formControlName="estado">
+                        <option value="activo">Activo</option>
+                        <option value="bloqueado">Bloqueado</option>
+                        <option value="mantenimiento">Mantenimiento</option>
+                    </select>
+                    <small class="text-muted">Nota: El estado "Ocupado" se asigna automáticamente cuando hay reservas pendientes.</small>
+                </div>
+
+                <div class="form-row">
+                    <label>Tamaño*</label>
+                    <select class="input" formControlName="tamano">
+                        <option value="">Selecciona un tamaño…</option>
+                        <option value="S">Pequeño (S)</option>
+                        <option value="M">Mediano (M)</option>
+                        <option value="L">Grande (L)</option>
+                        <option value="XL">Extra Grande (XL)</option>
+                    </select>
+                    <small class="error" *ngIf="form.get('tamano')?.touched && form.get('tamano')?.invalid">
+                        Selecciona un tamaño.
+                    </small>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2 class="card-title">Mantenimiento</h2>
+                <div *ngIf="mantenimientoProximo" class="mb-3 p-3 bg-light rounded">
+                    <p class="mb-2"><strong>Mantenimiento programado más cercano:</strong></p>
+                    <p class="mb-1"><small>Fecha: {{ mantenimientoProximo.fecha_programada | date:'dd/MM/yyyy' }}</small></p>
+                    <p class="mb-1" *ngIf="mantenimientoProximo.usuario">
+                        <small>Responsable: {{ mantenimientoProximo.usuario.nombre }} {{ mantenimientoProximo.usuario.apellido }}</small>
+                    </p>
+                </div>
+                <div formGroupName="mantenimiento" class="grid-2">
+                    <div class="form-row">
+                        <label>Técnico asignado</label>
+                        <select class="input" formControlName="tecnico_id" [disabled]="loadingTecnicos || tecnicos.length === 0">
+                            <option value="" disabled>Selecciona un técnico…</option>
+                            <option *ngIf="loadingTecnicos" disabled>Cargando técnicos...</option>
+                            <option *ngIf="tecnicos.length === 0" disabled>No hay técnicos disponibles</option>
+                            <option *ngFor="let t of tecnicos" [value]="t.id">{{ t.nombre }} {{ t.apellido }}</option>
+                        </select>
+                        <small class="text-muted" *ngIf="tecnicos.length > 0">
+                            Puedes cambiar el técnico asignado.
+                        </small>
+                    </div>
+                    <div class="form-row">
+                        <label>Fecha programada</label>
+                        <input class="input" type="date" formControlName="fecha_programada">
+                    </div>
+                    <div class="form-row" style="grid-column:1 / -1">
+                        <label>Descripción</label>
+                        <textarea class="input" rows="3" formControlName="descripcion" 
+                            placeholder="Describe el tipo de mantenimiento..."></textarea>
+                    </div>
+                </div>
+                <small class="text-muted" *ngIf="!mantenimientoProximo">
+                    No hay mantenimientos programados para este locker.
+                </small>
+            </section>
+        </form>
+    </div>
+</main>

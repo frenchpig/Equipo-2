@@ -1,0 +1,157 @@
+<app-header-repartidor titulo="Historial de Pedidos"></app-header-repartidor>
+
+<main class="py-4">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-xl-10">
+
+        <div class="row g-4 mb-4">
+          <div class="col-12 col-sm-6 col-lg-3" *ngFor="let kpi of kpis">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <p class="text-muted mb-1 fw-semibold">{{ kpi.label }}</p>
+                <div class="display-6 fw-bold">{{ kpi.value }}</div>
+                <small class="text-muted">{{ kpi.hint }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+          <div>
+            <h2 class="h5 mb-0">Historial de pedidos</h2>
+            <small class="text-muted">Total registros: {{ total }}</small>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-light btn-sm text-primary bg-white" type="button" (click)="limpiarFiltros()" [disabled]="loading">
+              Limpiar filtros
+            </button>
+            <button class="btn btn-outline-success btn-sm" type="button" (click)="cargarHistorico(page)" [disabled]="loading">
+              <i class="bi bi-arrow-repeat me-1"></i> Refrescar
+            </button>
+          </div>
+        </div>
+
+        <form class="card card-filter shadow-sm border-0 mb-4" (ngSubmit)="aplicarFiltros()">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fLogistica" class="form-label text-muted mb-1">Logística</label>
+                <select id="fLogistica" class="form-select" [(ngModel)]="filtroLogistica" name="logistica_estado">
+                  <option *ngFor="let opt of logisticaOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fEstado" class="form-label text-muted mb-1">Estado reserva</label>
+                <select id="fEstado" class="form-select" [(ngModel)]="filtroEstado" name="estado">
+                  <option *ngFor="let opt of estadoOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fUbicacion" class="form-label text-muted mb-1">Ubicación</label>
+                <select id="fUbicacion" class="form-select" [(ngModel)]="filtroUbicacionId" 
+                        name="ubicacion_id" [disabled]="loadingUbicaciones">
+                  <option [ngValue]="null">Todas las ubicaciones</option>
+                  <option *ngFor="let ubi of ubicaciones" [ngValue]="ubi.id">{{ ubi.nombre }}</option>
+                </select>
+                <small class="text-muted" *ngIf="loadingUbicaciones">Cargando ubicaciones...</small>
+              </div>
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fEmail" class="form-label text-muted mb-1">Email destinatario</label>
+                <input id="fEmail" type="email" class="form-control" [(ngModel)]="filtroEmail" 
+                       name="email" placeholder="usuario@dominio.cl" />
+              </div>
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fFechaDesde" class="form-label text-muted mb-1">Fecha desde</label>
+                <input id="fFechaDesde" type="date" class="form-control" [(ngModel)]="filtroFechaDesde" 
+                       name="fecha_desde" />
+              </div>
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fFechaHasta" class="form-label text-muted mb-1">Fecha hasta</label>
+                <input id="fFechaHasta" type="date" class="form-control" [(ngModel)]="filtroFechaHasta" 
+                       name="fecha_hasta" />
+              </div>
+              <div class="col-12 col-md-6 col-lg-6 d-flex justify-content-end gap-2">
+                <button class="btn btn-outline-secondary mt-auto" type="button" (click)="limpiarFiltros()" [disabled]="loading">
+                  Limpiar
+                </button>
+                <button class="btn btn-success mt-auto" type="submit" [disabled]="loading">Aplicar filtros</button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <div class="alert alert-danger" *ngIf="errorMsg">
+          {{ errorMsg }}
+        </div>
+
+        <div class="d-flex justify-content-center py-5" *ngIf="loading">
+          <div class="spinner-border text-primary" role="status" aria-label="Cargando histórico"></div>
+        </div>
+
+        <p class="text-muted" *ngIf="!loading && agrupadosPorUbicacion.length === 0 && !errorMsg">
+          No se encontraron pedidos con los criterios seleccionados.
+        </p>
+
+        <ng-container *ngIf="!loading && agrupadosPorUbicacion.length > 0">
+          <div *ngFor="let grupo of agrupadosPorUbicacion" class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+              <h3 class="h6 mb-0">
+                <i class="bi bi-geo-alt me-2"></i>{{ grupo.nombre }}
+              </h3>
+              <span class="badge bg-light text-dark">{{ grupo.pedidos.length }} pedido(s)</span>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>ID</th>
+                      <th>Locker</th>
+                      <th>Estado</th>
+                      <th>Logística</th>
+                      <th>Destinatario</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let r of grupo.pedidos">
+                      <td data-label="ID">#{{ r.id }}</td>
+                      <td data-label="Locker">
+                        <span *ngIf="r.locker">{{ r.locker }}</span>
+                        <span *ngIf="!r.locker" class="text-muted fst-italic">No asignado</span>
+                      </td>
+                      <td data-label="Estado">
+                        <span class="badge rounded-pill px-3 py-2" [ngClass]="r.estadoBadge">{{ r.estadoLabel }}</span>
+                      </td>
+                      <td data-label="Logística">
+                        <span [ngClass]="r.logisticaBadge">{{ r.logisticaLabel }}</span>
+                      </td>
+                      <td data-label="Destinatario">
+                        <strong class="d-block">{{ r.destinatario }}</strong>
+                        <small class="text-muted">{{ r.destinatarioEmail }}</small>
+                      </td>
+                      <td data-label="Fecha">{{ r.fechaIso | date:'dd/MM/yyyy' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <nav class="pagination-controls mt-4" aria-label="Historial de pedidos" *ngIf="!loading && lastPage > 1">
+          <button class="btn btn-outline-secondary" type="button" (click)="anterior()" [disabled]="page <= 1">
+            <i class="bi bi-chevron-left me-1"></i> Anterior
+          </button>
+          <span class="page-indicator">Página {{ page }} de {{ lastPage }}</span>
+          <button class="btn btn-outline-secondary" type="button" (click)="siguiente()" [disabled]="page >= lastPage">
+            Siguiente <i class="bi bi-chevron-right ms-1"></i>
+          </button>
+        </nav>
+
+      </div>
+    </div>
+  </div>
+</main>
+

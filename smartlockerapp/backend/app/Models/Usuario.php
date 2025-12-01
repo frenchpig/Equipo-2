@@ -1,0 +1,64 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Foundation\Auth\User as Authenticatable; // <- importante
+use Laravel\Sanctum\HasApiTokens;                       // <- importante
+
+class Usuario extends Authenticatable
+{
+    use HasApiTokens, HasFactory;
+
+    protected $table = 'usuarios';
+
+    public const ROLES = ['empresa', 'usuario', 'administrador', 'tecnico', 'repartidor'];
+
+    protected $fillable = [
+        'nombre',
+        'apellido',
+        'email',
+        'contrasena',
+        'telefono',
+        'rol',
+        'habilitado',
+    ];
+
+    protected $hidden = [
+        'contrasena',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'habilitado' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
+     * Mutator para encriptar la contraseña con SHA-256
+     */
+    protected function contrasena(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => $value ? hash('sha256', $value) : null
+        );
+    }
+
+    // Relaciones...
+    public function notificaciones() { return $this->hasMany(Notificacion::class, 'usuario_id'); }
+    public function reservas()       { return $this->hasMany(Reserva::class, 'usuario_id'); }
+    public function mantenimientos() { return $this->hasMany(Mantenimiento::class, 'usuario_id'); }
+    public function incidencias()    { return $this->hasMany(Incidencia::class, 'usuario_id'); }
+    public function historialEnvios(){ return $this->hasMany(HistorialEnvio::class, 'usuario_id'); }
+    public function datosEmpresa()   { return $this->hasOne(DatosEmpresa::class, 'usuario_id'); }
+    public function historialEmpresa(){ return $this->hasMany(HistorialEmpresa::class, 'usuario_id'); }
+    
+    // Relaciones para empresas (cuando rol = 'empresa')
+    public function ubicacionesAsignadas() { return $this->hasMany(EmpresaUbicacion::class, 'empresa_id'); }
+    public function reservasComoEmpresa() { return $this->hasMany(Reserva::class, 'empresa_id'); }
+    
+    // Relación para repartidores (cuando rol = 'repartidor')
+    public function repartidor() { return $this->hasOne(Repartidor::class, 'usuario_id'); }
+}

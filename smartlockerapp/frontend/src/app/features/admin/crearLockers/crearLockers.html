@@ -1,0 +1,133 @@
+<app-header-admin></app-header-admin>
+
+<main class="lockers-wrap">
+    <div class="container">
+        <div class="toolbar">
+            <h1 class="page-title">Nuevo locker</h1>
+            <div class="toolbar-actions">
+                <button type="button" class="btn btn-outline" (click)="volver()">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </button>
+            </div>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="guardar()" id="form-crear-locker" class="form-shell">
+
+            <!-- Datos generales -->
+            <section class="group-card">
+                <h2 class="group-title">Datos generales</h2>
+
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Número inicial*</label>
+                        <input class="input" type="number" formControlName="numero" min="1" placeholder="Ej: 1, 2, 3..." />
+                        <small class="text-muted" *ngIf="siguienteNumero && form.get('ubicacion_id')?.value">
+                            Siguiente número disponible: <strong>{{ siguienteNumero }}</strong>
+                        </small>
+                        <small class="error" *ngIf="form.get('numero')?.touched && form.get('numero')?.invalid">
+                            El número es requerido y debe ser mayor a 0.
+                        </small>
+                    </div>
+
+                    <div class="field">
+                        <label>Cantidad de lockers*</label>
+                        <input class="input" type="number" formControlName="cantidad" min="1" max="50" 
+                            placeholder="Cantidad a crear" />
+                        <small class="text-muted" *ngIf="(form.get('cantidad')?.value ?? 0) > 1 && form.get('numero')?.value">
+                            Se crearán lockers con números: <strong>{{ form.get('numero')?.value }} a {{ ((form.get('numero')?.value ?? 0) + (form.get('cantidad')?.value ?? 1) - 1) }}</strong>
+                        </small>
+                        <small class="text-muted" *ngIf="(form.get('cantidad')?.value ?? 0) <= 1">
+                            Se creará un solo locker.
+                        </small>
+                        <small class="error" *ngIf="form.get('cantidad')?.touched && form.get('cantidad')?.invalid">
+                            La cantidad debe ser entre 1 y 50.
+                        </small>
+                    </div>
+
+
+
+                    <!-- Sede -->
+                    <div class="field">
+                        <label>Sede (Ubicación)*</label>
+                        <select class="input" formControlName="ubicacion_id" [disabled]="loadingUbicaciones">
+                            <option value="" disabled>Selecciona una ubicación…</option>
+                            <option *ngIf="loadingUbicaciones" disabled>Cargando ubicaciones...</option>
+                            <option *ngFor="let u of ubicaciones" [value]="u.id">{{ u.nombre }}</option>
+                        </select>
+                        <small class="error" *ngIf="form.get('ubicacion_id')?.touched && form.get('ubicacion_id')?.invalid">
+                            Selecciona una ubicación.
+                        </small>
+                    </div>
+
+                    <!-- Estado -->
+                    <div class="field">
+                        <label>Estado</label>
+                        <select class="input" formControlName="estado">
+                            <option value="activo">Activo</option>
+                            <option value="bloqueado">Bloqueado</option>
+                            <option value="mantenimiento">Mantenimiento</option>
+                        </select>
+                        <small class="text-muted">Nota: El estado "Ocupado" se asigna automáticamente cuando hay reservas pendientes.</small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tamaño -->
+            <section class="group-card">
+                <h2 class="group-title">Tamaño</h2>
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Tamaño*</label>
+                        <select class="input" formControlName="tamano">
+                            <option value="">Selecciona un tamaño…</option>
+                            <option value="S">Pequeño (S)</option>
+                            <option value="M">Mediano (M)</option>
+                            <option value="L">Grande (L)</option>
+                            <option value="XL">Extra Grande (XL)</option>
+                        </select>
+                        <small class="error" *ngIf="form.get('tamano')?.touched && form.get('tamano')?.invalid">
+                            Selecciona un tamaño.
+                        </small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Información de Mantenimiento Preventivo -->
+            <section class="group-card">
+                <h2 class="group-title">Mantenimiento Preventivo</h2>
+                <div class="info-box" style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <i class="bi bi-info-circle" style="color: #0284c7; font-size: 1.25rem; flex-shrink: 0; margin-top: 0.125rem;"></i>
+                        <div style="flex: 1;">
+                            <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #0c4a6e;">
+                                Mantenimiento automático
+                            </p>
+                            <p style="margin: 0; color: #075985; font-size: 0.9rem; line-height: 1.5;">
+                                Al crear el locker, se asignará automáticamente un <strong>mantenimiento preventivo</strong> 
+                                programado para <strong>1 mes después</strong> de la fecha de creación. 
+                                El mantenimiento será asignado al primer técnico habilitado disponible.
+                            </p>
+                            <p style="margin: 0.5rem 0 0 0; color: #075985; font-size: 0.85rem; font-style: italic;">
+                                <span *ngIf="tecnicos.length > 0">
+                                    ✓ Hay {{ tecnicos.length }} técnico(s) disponible(s) para asignación automática.
+                                </span>
+                                <span *ngIf="tecnicos.length === 0" style="color: #dc2626;">
+                                    ⚠ No hay técnicos disponibles. Se recomienda crear al menos un técnico antes de crear lockers.
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-light" (click)="cancelar()" [disabled]="loading">Cancelar</button>
+                <button type="submit" class="btn btn-success" [disabled]="loading || loadingUbicaciones">
+                    <span *ngIf="loading">Guardando...</span>
+                    <span *ngIf="!loading">Guardar</span>
+                </button>
+            </div>
+
+        </form>
+    </div>
+</main>

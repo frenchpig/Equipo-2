@@ -1,0 +1,110 @@
+<app-header-admin></app-header-admin>
+
+<main class="detalle-wrap">
+    <div class="container">
+        <div *ngIf="loading" class="text-center py-5">
+            <p>Cargando información del locker...</p>
+        </div>
+
+        <div *ngIf="error" class="alert alert-danger">
+            {{ error }}
+        </div>
+
+        <div *ngIf="!loading && !error && locker">
+            <div class="toolbar">
+                <h1 class="page-title">
+                    {{ nombreLocker }}
+                </h1>
+                <div class="toolbar-actions">
+                    <span class="badge" [class.badge-success]="estadoDisplay==='Activo'"
+                        [class.badge-warning]="estadoDisplay==='Ocupado'"
+                        [class.badge-info]="estadoDisplay==='En revisión'"
+                        [class.badge-danger]="estadoDisplay==='Bloqueado'">
+                        {{ estadoDisplay }}
+                    </span>
+
+                    <button class="btn btn-outline" (click)="volver()">Volver</button>
+                    <button class="btn btn-success" (click)="irEditar()">Editar</button>
+                </div>
+            </div>
+
+            <section class="grid-2">
+                <article class="card">
+                    <h2 class="card-title">Información general</h2>
+                    <div class="kv">
+                        <div class="row"><span>Nombre</span><strong>{{ nombreLocker }}</strong></div>
+                        <div class="row"><span>Sede</span><strong>{{ locker.ubicacion?.nombre || 'Sin ubicación' }}</strong></div>
+                        <div class="row" *ngIf="locker.tamano"><span>Tamaño</span><strong>{{ locker.tamano }}</strong></div>
+                        <div class="row"><span>Última actualización</span><strong>{{ locker.updated_at || locker.created_at | date:'dd/MM/yyyy' }}</strong></div>
+                    </div>
+                </article>
+            </section>
+
+            <section class="card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="card-title mb-0">Historial</h2>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="text-muted small">Filtrar por acción:</label>
+                        <select class="form-select form-select-sm" style="width: auto;" 
+                            [(ngModel)]="filtroAccion" (change)="onFiltroAccionChange()">
+                            <option *ngFor="let accion of accionesDisponibles" [value]="accion.value">
+                                {{ accion.label }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div *ngIf="loadingHistorial" class="text-center py-3">
+                    <small class="text-muted">Cargando historial...</small>
+                </div>
+
+                <div class="table-responsive" *ngIf="!loadingHistorial && historial.length > 0">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Acción</th>
+                                <th>Descripción</th>
+                                <th>Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let item of historial">
+                                <td>{{ item.created_at | date:'dd/MM/yyyy' }}</td>
+                                <td><strong>{{ getAccionDisplay(item.accion) }}</strong></td>
+                                <td>{{ item.descripcion }}</td>
+                                <td>{{ getUsuarioDisplay(item) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div *ngIf="!loadingHistorial && historial.length === 0" class="text-center py-4">
+                    <p class="text-muted">No hay historial registrado para este locker.</p>
+                </div>
+
+                <!-- Paginación -->
+                <div *ngIf="!loadingHistorial && historialTotal > 0" class="d-flex justify-content-between align-items-center mt-3">
+                    <small class="text-muted">
+                        Mostrando {{ historial.length }} de {{ historialTotal }} registros
+                    </small>
+                    <div class="pagination">
+                        <button class="btn btn-sm btn-outline" 
+                            [disabled]="historialPage === 1"
+                            (click)="cambiarPagina(historialPage - 1)">
+                            Anterior
+                        </button>
+                        <span class="mx-2">
+                            Página {{ historialPage }} de {{ historialLastPage }}
+                        </span>
+                        <button class="btn btn-sm btn-outline"
+                            [disabled]="historialPage === historialLastPage"
+                            (click)="cambiarPagina(historialPage + 1)">
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>

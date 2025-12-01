@@ -1,0 +1,429 @@
+<app-header-repartidor titulo="Pedidos Activos"></app-header-repartidor>
+
+<main class="py-4">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-xl-10">
+
+        <div class="row g-4 mb-4">
+          <div class="col-12 col-sm-6 col-lg-3" *ngFor="let kpi of kpis">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <p class="text-muted mb-1 fw-semibold">{{ kpi.label }}</p>
+                <div class="display-6 fw-bold">{{ kpi.value }}</div>
+                <small class="text-muted">{{ kpi.hint }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+          <div>
+            <h2 class="h5 mb-0">Pedidos activos</h2>
+            <small class="text-muted">Total registros: {{ total }}</small>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-light btn-sm text-primary bg-white" type="button" (click)="limpiarFiltros()" [disabled]="loading">
+              Limpiar filtros
+            </button>
+            <button class="btn btn-outline-success btn-sm" type="button" (click)="cargarAsignaciones(page)" [disabled]="loading">
+              <i class="bi bi-arrow-repeat me-1"></i> Refrescar
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra de acciones masivas global -->
+        <div class="card border-0 shadow-sm mb-3" *ngIf="!loading && pedidosSeleccionados.size > 0">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <span class="text-muted">
+                <strong>{{ pedidosSeleccionados.size }}</strong> pedido(s) seleccionado(s)
+              </span>
+              <div class="d-flex gap-2">
+                <button
+                  type="button"
+                  class="btn btn-outline-primary btn-sm"
+                  (click)="marcarEnRutaMasivo()"
+                  [disabled]="accionMasivaLoading || pedidosSeleccionablesParaEnRuta.length === 0">
+                  <span *ngIf="accionMasivaLoading" class="spinner-border spinner-border-sm me-1"></span>
+                  Marcar en ruta ({{ pedidosSeleccionablesParaEnRuta.length }})
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-success btn-sm"
+                  (click)="marcarEntregadoMasivo()"
+                  [disabled]="accionMasivaLoading || pedidosSeleccionablesParaEntregado.length === 0">
+                  <span *ngIf="accionMasivaLoading" class="spinner-border spinner-border-sm me-1"></span>
+                  Marcar entregado ({{ pedidosSeleccionablesParaEntregado.length }})
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  (click)="pedidosSeleccionados.clear()">
+                  Limpiar selección
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form class="card card-filter shadow-sm border-0 mb-4" (ngSubmit)="aplicarFiltros()">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fLogistica" class="form-label text-muted mb-1">Logística</label>
+                <select id="fLogistica" class="form-select" [(ngModel)]="filtroLogistica" name="logistica_estado">
+                  <option *ngFor="let opt of logisticaOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fEstado" class="form-label text-muted mb-1">Estado reserva</label>
+                <select id="fEstado" class="form-select" [(ngModel)]="filtroEstado" name="estado">
+                  <option *ngFor="let opt of estadoOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fUbicacion" class="form-label text-muted mb-1">Ubicación</label>
+                <select id="fUbicacion" class="form-select" [(ngModel)]="filtroUbicacionId" 
+                        name="ubicacion_id" [disabled]="loadingUbicaciones">
+                  <option [ngValue]="null">Todas las ubicaciones</option>
+                  <option *ngFor="let ubi of ubicaciones" [ngValue]="ubi.id">{{ ubi.nombre }}</option>
+                </select>
+                <small class="text-muted" *ngIf="loadingUbicaciones">Cargando ubicaciones...</small>
+              </div>
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fEmail" class="form-label text-muted mb-1">Email destinatario</label>
+                <input id="fEmail" type="email" class="form-control" [(ngModel)]="filtroEmail" 
+                       name="email" placeholder="usuario@dominio.cl" />
+              </div>
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fFechaDesde" class="form-label text-muted mb-1">Fecha desde</label>
+                <input id="fFechaDesde" type="date" class="form-control" [(ngModel)]="filtroFechaDesde" 
+                       name="fecha_desde" />
+              </div>
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="fFechaHasta" class="form-label text-muted mb-1">Fecha hasta</label>
+                <input id="fFechaHasta" type="date" class="form-control" [(ngModel)]="filtroFechaHasta" 
+                       name="fecha_hasta" />
+              </div>
+              <div class="col-12 col-md-6 col-lg-6 d-flex justify-content-end gap-2">
+                <button class="btn btn-outline-secondary mt-auto" type="button" (click)="limpiarFiltros()" [disabled]="loading">
+                  Limpiar
+                </button>
+                <button class="btn btn-success mt-auto" type="submit" [disabled]="loading">Aplicar filtros</button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <div class="alert alert-danger" *ngIf="errorMsg">
+          {{ errorMsg }}
+        </div>
+
+        <div class="d-flex justify-content-center py-5" *ngIf="loading">
+          <div class="spinner-border text-primary" role="status" aria-label="Cargando reservas"></div>
+        </div>
+
+        <p class="text-muted" *ngIf="!loading && agrupadosPorUbicacion.length === 0 && !errorMsg">
+          No se encontraron pedidos con los criterios seleccionados.
+        </p>
+
+        <ng-container *ngIf="!loading && agrupadosPorUbicacion.length > 0">
+          <div *ngFor="let grupo of agrupadosPorUbicacion" class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+              <h3 class="h6 mb-0">
+                <i class="bi bi-geo-alt me-2"></i>{{ grupo.nombre }}
+              </h3>
+              <span class="badge bg-light text-dark">{{ grupo.pedidos.length }} pedido(s)</span>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="width: 40px;">
+                        <input 
+                          class="form-check-input" 
+                          type="checkbox" 
+                          [checked]="todosSeleccionadosEnGrupo(grupo)"
+                          (change)="toggleSeleccionarTodos(grupo)"
+                          title="Seleccionar todos">
+                      </th>
+                      <th>ID</th>
+                      <th>Locker</th>
+                      <th>Estado</th>
+                      <th>Logística</th>
+                      <th>Destinatario</th>
+                      <th>Fecha</th>
+                      <th class="text-end">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let r of grupo.pedidos">
+                      <td data-label="Seleccionar">
+                        <input 
+                          class="form-check-input" 
+                          type="checkbox" 
+                          [checked]="estaSeleccionado(r.id)"
+                          (change)="toggleSeleccionPedido(r.id)"
+                          [disabled]="!puedeMarcarEnRuta(r) && !puedeMarcarEntregado(r)">
+                      </td>
+                      <td data-label="ID">#{{ r.id }}</td>
+                      <td data-label="Locker">
+                        <span *ngIf="r.logisticaEstado === 'en_camino' && r.locker">{{ r.locker }}</span>
+                        <span *ngIf="r.logisticaEstado !== 'en_camino'" class="text-muted fst-italic">No asignado</span>
+                        <span *ngIf="r.logisticaEstado === 'en_camino' && !r.locker" class="text-muted fst-italic">Pendiente de asignación</span>
+                      </td>
+                      <td data-label="Estado">
+                        <span class="badge rounded-pill px-3 py-2" [ngClass]="r.estadoBadge">{{ r.estadoLabel }}</span>
+                      </td>
+                      <td data-label="Logística">
+                        <span [ngClass]="r.logisticaBadge">{{ r.logisticaLabel }}</span>
+                      </td>
+                      <td data-label="Destinatario" class="destinatario-cell">
+                        <div class="destinatario-info">
+                          <strong class="d-block destinatario-nombre">{{ r.destinatario }}</strong>
+                          <small class="text-muted destinatario-email">{{ r.destinatarioEmail }}</small>
+                        </div>
+                      </td>
+                      <td data-label="Fecha">{{ r.fechaIso | date:'dd/MM/yyyy' }}</td>
+                      <td class="text-end acciones-cell" data-label="Acciones">
+                        <div class="acciones-buttons">
+                          <button
+                            class="btn btn-outline-primary btn-sm btn-action"
+                            type="button"
+                            (click)="marcarEnRuta(r.id)"
+                            *ngIf="r.estado === 'pendiente' && r.logisticaEstado === 'asignado'"
+                            [disabled]="actionLoading.has(r.id)">
+                            <span *ngIf="actionLoading.has(r.id)" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            <span class="btn-text">Marcar en ruta</span>
+                          </button>
+                          <button
+                            class="btn btn-outline-warning btn-sm btn-action"
+                            type="button"
+                            (click)="abrirModalIncidencia(r)"
+                            *ngIf="r.logisticaEstado === 'en_camino'"
+                            [disabled]="!r.lockerId || actionLoading.has(r.id)"
+                            title="Reportar incidencia del locker">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span class="btn-text">Reportar incidencia</span>
+                          </button>
+                          <button
+                            class="btn btn-outline-danger btn-sm btn-action"
+                            type="button"
+                            (click)="abrirModalCancelar(r)"
+                            *ngIf="r.logisticaEstado === 'en_camino'"
+                            [disabled]="actionLoading.has(r.id)"
+                            title="Cancelar entrega (anula el pedido)">
+                            <i class="bi bi-x-circle"></i>
+                            <span class="btn-text">Cancelar entrega</span>
+                          </button>
+                          <button
+                            class="btn btn-success btn-sm btn-action"
+                            type="button"
+                            (click)="marcarEntregado(r.id)"
+                            *ngIf="r.logisticaEstado === 'en_camino'"
+                            [disabled]="actionLoading.has(r.id)">
+                            <span *ngIf="actionLoading.has(r.id)" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            <span class="btn-text">Marcar entregado</span>
+                          </button>
+                          <span class="text-muted small" *ngIf="r.logisticaEstado === 'completado'">Entregado</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <nav class="pagination-controls mt-4" aria-label="Reservas asignadas" *ngIf="!loading && lastPage > 1">
+          <button class="btn btn-outline-secondary" type="button" (click)="anterior()" [disabled]="page <= 1">
+            <i class="bi bi-chevron-left me-1"></i> Anterior
+          </button>
+          <span class="page-indicator">Página {{ page }} de {{ lastPage }}</span>
+          <button class="btn btn-outline-secondary" type="button" (click)="siguiente()" [disabled]="page >= lastPage">
+            Siguiente <i class="bi bi-chevron-right ms-1"></i>
+          </button>
+        </nav>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal para reportar incidencia -->
+<div class="modal fade" [class.show]="mostrarModalIncidencia" [style.display]="mostrarModalIncidencia ? 'block' : 'none'" tabindex="-1" role="dialog" *ngIf="mostrarModalIncidencia">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reportar incidencia del locker</h5>
+        <button type="button" class="btn-close" (click)="cerrarModalIncidencia()" [disabled]="reportandoIncidencia" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="incidenciaForm" (ngSubmit)="reportarIncidencia()">
+          <div class="mb-3">
+            <label for="problemaTipo" class="form-label fw-semibold">
+              Tipo de problema <span class="text-danger">*</span>
+            </label>
+            <select
+              id="problemaTipo"
+              class="form-select"
+              formControlName="problema_tipo"
+              [disabled]="reportandoIncidencia">
+              <option value="">Selecciona un problema</option>
+              <option *ngFor="let problema of problemasLocker" [value]="problema.value">
+                {{ problema.label }}
+              </option>
+            </select>
+            <div
+              class="invalid-feedback d-block"
+              *ngIf="incidenciaForm.controls['problema_tipo'].invalid && (incidenciaForm.controls['problema_tipo'].dirty || incidenciaForm.controls['problema_tipo'].touched)">
+              Debes seleccionar un tipo de problema.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="descripcionIncidencia" class="form-label fw-semibold">
+              Descripción <span class="text-danger">*</span>
+            </label>
+            <textarea
+              id="descripcionIncidencia"
+              class="form-control"
+              formControlName="descripcion"
+              rows="4"
+              placeholder="Describe el problema con el locker..."
+              [disabled]="reportandoIncidencia"
+              maxlength="1000"></textarea>
+            <div
+              class="invalid-feedback d-block"
+              *ngIf="incidenciaForm.controls['descripcion'].invalid && (incidenciaForm.controls['descripcion'].dirty || incidenciaForm.controls['descripcion'].touched)">
+              <span *ngIf="incidenciaForm.controls['descripcion'].errors?.['required']">
+                Debes proporcionar una descripción del problema.
+              </span>
+              <span *ngIf="incidenciaForm.controls['descripcion'].errors?.['maxlength']">
+                La descripción no puede exceder 1000 caracteres.
+              </span>
+            </div>
+            <small class="text-muted">
+              {{ incidenciaForm.controls['descripcion'].value?.length || 0 }}/1000 caracteres
+            </small>
+          </div>
+
+          <div class="alert alert-info" *ngIf="reservaIncidencia">
+            <small>
+              <strong>Pedido:</strong> #{{ reservaIncidencia.id }}<br>
+              <strong>Locker:</strong> {{ reservaIncidencia.locker || 'No asignado' }}<br>
+              <strong>Ubicación:</strong> {{ reservaIncidencia.ubicacion }}
+            </small>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="cerrarModalIncidencia()"
+          [disabled]="reportandoIncidencia">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-warning"
+          (click)="reportarIncidencia()"
+          [disabled]="incidenciaForm.invalid || reportandoIncidencia">
+          <span *ngIf="reportandoIncidencia" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          Reportar incidencia
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="mostrarModalIncidencia" *ngIf="mostrarModalIncidencia"></div>
+
+<!-- Modal para confirmar cancelación de entrega -->
+<div class="modal fade" [class.show]="mostrarModalCancelar" [style.display]="mostrarModalCancelar ? 'block' : 'none'" tabindex="-1" role="dialog" *ngIf="mostrarModalCancelar">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+          Confirmar cancelación de entrega
+        </h5>
+        <button type="button" class="btn-close" (click)="cerrarModalCancelar()" [disabled]="cancelandoEntrega" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body pt-3">
+        <div class="alert alert-warning" role="alert">
+          <strong>¿Estás seguro de que deseas cancelar esta entrega?</strong>
+        </div>
+        
+        <p class="mb-3">
+          Esta acción <strong>anulará el pedido</strong> y la empresa tendrá que crear una nueva reserva.
+        </p>
+
+        <div class="card bg-light border-0 mb-3" *ngIf="reservaCancelar">
+          <div class="card-body p-3">
+            <div class="row g-2 small">
+              <div class="col-6">
+                <strong>Pedido:</strong> #{{ reservaCancelar.id }}
+              </div>
+              <div class="col-6">
+                <strong>Locker:</strong> {{ reservaCancelar.locker || 'No asignado' }}
+              </div>
+              <div class="col-12">
+                <strong>Destinatario:</strong> {{ reservaCancelar.destinatario }}
+              </div>
+              <div class="col-12">
+                <strong>Ubicación:</strong> {{ reservaCancelar.ubicacion }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="razonCancelacion" class="form-label fw-semibold">
+            Razón de cancelación <span class="text-danger">*</span>
+          </label>
+          <select
+            id="razonCancelacion"
+            class="form-select"
+            [(ngModel)]="razonCancelacion"
+            [disabled]="cancelandoEntrega">
+            <option value="">Selecciona una razón</option>
+            <option *ngFor="let razon of razonesCancelacion" [value]="razon.value">
+              {{ razon.label }}
+            </option>
+          </select>
+          <small class="text-muted">
+            Es obligatorio indicar la razón por la cual se cancela la entrega.
+          </small>
+        </div>
+
+        <p class="text-muted small mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          Esta acción no se puede deshacer. El locker será liberado y el pedido quedará anulado.
+        </p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="cerrarModalCancelar()"
+          [disabled]="cancelandoEntrega">
+          No, mantener entrega
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          (click)="confirmarCancelarEntrega()"
+          [disabled]="cancelandoEntrega || !razonCancelacion">
+          <span *ngIf="cancelandoEntrega" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          <i class="bi bi-x-circle me-1" *ngIf="!cancelandoEntrega"></i>
+          Sí, cancelar entrega
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="mostrarModalCancelar" *ngIf="mostrarModalCancelar"></div>
